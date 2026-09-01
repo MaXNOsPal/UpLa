@@ -88,6 +88,7 @@ $('btnVerify').onclick = async () => {
   say('กำลังตรวจสอบ...');
   const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
   if (error) return say('รหัสไม่ถูกต้องหรือหมดอายุ: ' + error.message);
+    goToApp(); // เพิ่มบรรทัดนี้
   say('');   // onAuthStateChange จะสลับหน้าให้เอง
 };
 
