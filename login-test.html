@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 380px; margin: 60px auto; padding: 0 20px; }
+  input { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; box-sizing: border-box; }
+  button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; }
+  .hide { display: none; }
+  #msg { margin-top: 12px; color: #c00; min-height: 20px; }
+</style>
+</head>
+<body>
+
+<!-- ---------- หน้าล็อกอิน ---------- -->
+<div id="viewLogin">
+  <h2>เข้าสู่ระบบ</h2>
+  <input id="email" type="email" placeholder="อีเมลของคุณ" autocomplete="email">
+  <button id="btnSend">ส่งรหัส 6 หลัก</button>
+</div>
+
+<!-- ---------- หน้ากรอก OTP ---------- -->
+<div id="viewOtp" class="hide">
+  <h2>ใส่รหัสจากอีเมล</h2>
+  <input id="otp" type="text" inputmode="numeric" maxlength="6" placeholder="123456">
+  <button id="btnVerify">ยืนยัน</button>
+  <button id="btnBack" style="margin-top:8px;background:none;border:none;color:#06c;">← เปลี่ยนอีเมล</button>
+</div>
+
+<!-- ---------- หน้าแอป (ล็อกอินแล้ว) ---------- -->
+<div id="viewApp" class="hide">
+  <h2>เข้าระบบสำเร็จ ✅</h2>
+  <p id="who"></p>
+  <button id="btnLogout">ออกจากระบบ</button>
+</div>
+
+<div id="msg"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ========== 1) ใส่ค่าของคุณตรงนี้ ==========
+const SB_URL = 'https://onjvnijtotxnnecxfgvk.supabase.co';
+const SB_KEY = 'sb_publishable_QihvN4zm6Fwq-lso7UZH7g_fqgXnLnt';   // anon public key
+// ==========================================
+
+const sb = supabase.createClient(SB_URL, SB_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+});
+
+const $ = id => document.getElementById(id);
+const show = v => {
+  ['viewLogin','viewOtp','viewApp'].forEach(x => $(x).classList.add('hide'));
+  $(v).classList.remove('hide');
+};
+const say = t => $('msg').textContent = t || '';
+
+// ---------- ตัวตัดสินใจหลัก: ทำงานทุกครั้งที่สถานะเปลี่ยน ----------
+sb.auth.onAuthStateChange((_e, session) => {
+  if (session) {
+    $('who').textContent = session.user.email;
+    show('viewApp');
+  } else {
+    show('viewLogin');
+  }
+});
+
+// ---------- ส่ง OTP ----------
+$('btnSend').onclick = async () => {
+  const email = $('email').value.trim();
+  if (!email) return say('กรอกอีเมลก่อนครับ');
+  say('กำลังส่ง...');
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: true }
+  });
+  if (error) return say('ผิดพลาด: ' + error.message);
+  say('ส่งรหัสไปที่ ' + email + ' แล้ว');
+  show('viewOtp');
+};
+
+// ---------- ยืนยัน OTP ----------
+$('btnVerify').onclick = async () => {
+  const token = $('otp').value.trim();
+  const email = $('email').value.trim();
+  if (token.length !== 6) return say('รหัสต้องมี 6 หลัก');
+  say('กำลังตรวจสอบ...');
+  const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
+  if (error) return say('รหัสไม่ถูกต้องหรือหมดอายุ: ' + error.message);
+  say('');   // onAuthStateChange จะสลับหน้าให้เอง
+};
+
+$('btnBack').onclick = () => { say(''); show('viewLogin'); };
+$('btnLogout').onclick = () => sb.auth.signOut();
+</script>
+</body>
+</html>
