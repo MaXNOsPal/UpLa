@@ -24,7 +24,7 @@
 <!-- ---------- หน้ากรอก OTP ---------- -->
 <div id="viewOtp" class="hide">
   <h2>ใส่รหัสจากอีเมล</h2>
-  <input id="otp" type="text" inputmode="numeric" maxlength="6" placeholder="123456">
+  <input id="otp" type="text" inputmode="numeric" maxlength="8" placeholder="12345678">
   <button id="btnVerify">ยืนยัน</button>
   <button id="btnBack" style="margin-top:8px;background:none;border:none;color:#06c;">← เปลี่ยนอีเมล</button>
 </div>
@@ -84,7 +84,7 @@ $('btnSend').onclick = async () => {
 $('btnVerify').onclick = async () => {
   const token = $('otp').value.trim();
   const email = $('email').value.trim();
-  if (token.length !== 6) return say('รหัสต้องมี 6 หลัก');
+  if (token.length !== 8) return say('รหัสต้องมี 8 หลัก');
   say('กำลังตรวจสอบ...');
   const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
   if (error) return say('รหัสไม่ถูกต้องหรือหมดอายุ: ' + error.message);
